@@ -1,11 +1,14 @@
 {
   "expo": {
-    "name": "ParseMate",
-    "slug": "ParseMate",
+    "name": "XMLFormRenderer",
+    "slug": "XMLFormRenderer",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "newArchEnabled": true,
     "splash": {
       "image": "./assets/splash-icon.png",
@@ -19,10 +22,17 @@
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
-      }
+      },
+      "package": "com.immohitsen.XMLFormRenderer"
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "extra": {
+      "eas": {
+        "projectId": "9c8607d0-2a21-42d9-8c70-7ff98a8f8b31"
+      }
+    },
+    "owner": "immohitsen"
   }
 }
