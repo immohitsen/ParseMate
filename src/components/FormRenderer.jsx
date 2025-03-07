@@ -11,11 +11,10 @@ import {
 } from "react-native";
 import { Picker } from "@react-native-picker/picker";
 import DateTimePicker from "@react-native-community/datetimepicker";
-import BouncyCheckbox from "react-native-bouncy-checkbox";
-import DocumentPicker from "expo-document-picker";
-import Signature from "react-native-signature-canvas";
+import * as DocumentPicker from "expo-document-picker";
+import DrawingField from "./DrawingField";
 
-const FormRenderer = ({ formData }) => {
+const FormRenderer = ({ formData, setScrollEnabled }) => {
   const [selectedValue, setSelectedValue] = useState("");
   const [checkboxValues, setCheckboxValues] = useState({});
   const [date, setDate] = useState(new Date());
@@ -76,37 +75,49 @@ const FormRenderer = ({ formData }) => {
                 </Picker>
               </View>
             );
-          case "checkbox":
+          case "checkbox": {
+            // Create unique state key for each checkbox group
+            const stateKey = `checkbox_${field.name}`;
+            const [checkedValues, setCheckedValues] = useState({});
+
             return (
               <View key={index} className="mb-4">
                 <Text className="text-lg font-semibold pb-2">
                   {field.label}
                 </Text>
+
                 <View className="gap-y-2">
-                  {" "}
-                  {/* Controls vertical spacing between checkboxes */}
-                  {field.options.map((option, i) => (
-                    <View key={i} className="flex-row">
-                      <BouncyCheckbox
-                        size={20} // Reduced size for better UI
-                        fillColor="#007bff"
-                        unfillColor="#FFFFFF"
-                        iconStyle={{ borderColor: "#007bff" }}
-                        innerIconStyle={{ borderWidth: 2 }}
-                        isChecked={checkboxValues[option] || false}
-                        onPress={(isChecked) =>
-                          setCheckboxValues({
-                            ...checkboxValues,
-                            [option]: isChecked,
-                          })
-                        }
-                      />
-                      <Text className="ml-2">{option}</Text>
-                    </View>
-                  ))}
+                  {field.options.map((option, i) => {
+                    const optionKey = `${stateKey}_${i}`;
+                    const isChecked = checkedValues[optionKey] || false;
+
+                    return (
+                      <View key={optionKey} className="flex-row items-center">
+                        <TouchableOpacity
+                          onPress={() => {
+                            setCheckedValues((prev) => ({
+                              ...prev,
+                              [optionKey]: !isChecked,
+                            }));
+                          }}
+                          className="w-5 h-5 border-2 border-blue-500 rounded-md 
+                              items-center justify-center mr-2"
+                        >
+                          {isChecked && (
+                            <View className="w-3 h-3 bg-blue-500 rounded-sm" />
+                          )}
+                        </TouchableOpacity>
+
+                        <Text className="text-base text-gray-700">
+                          {option.label || option}
+                        </Text>
+                      </View>
+                    );
+                  })}
                 </View>
               </View>
             );
+          }
 
           case "date":
             return (
@@ -133,142 +144,55 @@ const FormRenderer = ({ formData }) => {
                 )}
               </View>
             );
-            case "drawing": 
-              const sigRef = useRef(null);
-              const [signature, setSignature] = useState(null);
+          case "drawing":
+            return (
+              <DrawingField
+                key={index}
+                field={field}
+                setScrollEnabled={setScrollEnabled}
+              />
+            );
+
+            case "file": {
+              const [file, setFile] = useState(null);
+            
+              const handleFilePick = async () => {
+                try {
+                  const result = await DocumentPicker.getDocumentAsync();
+                  if (result.type === 'success') {
+                    setFile(result);
+                    alert(`Selected file: ${result.name}`);
+                  }
+                } catch (error) {
+                  alert('Failed to pick file');
+                }
+              };
             
               return (
-                <View key={index} className="mb-6">
-                  <Text className="text-lg font-medium text-gray-800 mb-2">
+                <View key={index} className="mb-4">
+                  <Text className="text-lg font-semibold pb-2">
                     {field.label}
                   </Text>
             
-                  <View className="border border-gray-300 rounded-xl bg-white shadow-sm">
-                    {signature ? (
-                      // Signature Preview Mode
-                      <View className="p-4">
-                        <Image
-                          source={{ uri: signature }}
-                          className="h-40 w-full mb-4"
-                          resizeMode="contain"
-                        />
-                        <View className="flex-row justify-between">
-                          <TouchableOpacity
-                            onPress={() => setSignature(null)}
-                            className="flex-1 bg-red-100 py-2 rounded-lg mx-1"
-                          >
-                            <Text className="text-red-600 text-center font-medium">
-                              Clear Signature
-                            </Text>
-                          </TouchableOpacity>
-                        </View>
-                      </View>
-                    ) : (
-                      // Signature Entry Mode
-                      <View className="p-4">
-                        <View className="border-2 border-dashed border-gray-200 rounded-lg overflow-hidden">
-                          <Signature
-                            ref={sigRef}
-                            onOK={(img) => setSignature(img)}
-                            descriptionText=""
-                            webStyle={`
-                              .m-signature-pad {
-                                box-shadow: none;
-                                border: none;
-                                height: 100%;
-                                background-color: transparent;
-                              }
-                              
-                              .m-signature-pad--body {
-                                border: none;
-                                height: 180px;
-                                width: 100%;
-                                margin: 0;
-                                background-color: transparent;
-                              }
-                              
-                              .m-signature-pad--body canvas {
-                                background-color: transparent;
-                              }
+                  {/* File Selection Button */}
+                  <TouchableOpacity
+                    onPress={handleFilePick}
+                    className="bg-blue-500 py-2 px-4 rounded-lg"
+                  >
+                    <Text className="text-white text-center font-medium">
+                      Choose File
+                    </Text>
+                  </TouchableOpacity>
             
-                              .m-signature-pad--footer {
-                                display: flex;
-                                justify-content: space-between;
-                                padding: 12px 0 0;
-                                margin-top: 8px;
-                              }
-            
-                              .m-signature-pad--footer .button {
-                                padding: 10px 20px;
-                                border-radius: 8px;
-                                border: 1px solid #e5e7eb;
-                                font-weight: 500;
-                                cursor: pointer;
-                                transition: all 0.2s ease;
-                                background-color: white;
-                              }
-            
-                              .m-signature-pad--footer .button.clear {
-                                color: #dc2626;
-                              }
-            
-                              .m-signature-pad--footer .button.clear:hover {
-                                background-color: #fee2e2;
-                              }
-            
-                              .m-signature-pad--footer .button.save {
-                                color: #16a34a;
-                              }
-            
-                              .m-signature-pad--footer .button.save:hover {
-                                background-color: #dcfce7;
-                              }
-                            `}
-                            style={{
-                              height: 180,
-                              width: "100%",
-                              backgroundColor: "transparent",
-                            }}
-                          />
-                        </View>
-            
-                        {/* Control Buttons */}
-                        <View className="flex-row justify-center gap-3 mt-4">
-                          <TouchableOpacity
-                            onPress={() => sigRef.current?.undo()}
-                            className="px-5 py-2 bg-gray-100 rounded-lg"
-                          >
-                            <Text className="text-gray-700 font-medium">Undo</Text>
-                          </TouchableOpacity>
-                          <TouchableOpacity
-                            onPress={() => sigRef.current?.redo()}
-                            className="px-5 py-2 bg-gray-100 rounded-lg"
-                          >
-                            <Text className="text-gray-700 font-medium">Redo</Text>
-                          </TouchableOpacity>
-                        </View>
-                      </View>
-                    )}
-                  </View>
+                  {/* Show Selected File */}
+                  {file && (
+                    <Text className="mt-2 text-gray-700">
+                      Selected: {file.name}
+                    </Text>
+                  )}
                 </View>
               );
-            
-          case "file":
-            return (
-              <View key={index} className="mb-4">
-                <Text className="text-lg font-semibold pb-2">
-                  {field.label}
-                </Text>
-                <Button
-                  title="Choose File"
-                  onPress={async () => {
-                    const result = await DocumentPicker.getDocumentAsync();
-                    if (result.type === "success") setFileName(result.name);
-                  }}
-                />
-                <Text className="mt-2">{fileName}</Text>
-              </View>
-            );
+            }
           case "color":
             return (
               <View key={index} className="mb-4">
